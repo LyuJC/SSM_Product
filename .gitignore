@@ -3,12 +3,27 @@
 
 # Log file
 *.log
+tmp/
+*.lock
 
 # BlueJ files
 *.ctxt
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
+
+# idea
+.idea
+.idea/
+*.iml
+
+*velocity.log*
+
+###STS###
+
+.apt_generated
+.factorypath
+.springBeans
 
 # Package Files #
 *.jar
@@ -18,6 +33,9 @@
 *.zip
 *.tar.gz
 *.rar
+target/
+out/
+
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
