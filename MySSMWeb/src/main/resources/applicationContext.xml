@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        https://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/tx
+        https://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--<import resource="classpath:spring_mvc.xml"/>-->
+    <!--开启注解扫描-->
+    <context:component-scan base-package="com.juncheng.service"></context:component-scan>
+    <!--注意这里使用注解配置dao后，就不用整个xml专门去配置mybatis了-->
+    <context:component-scan base-package="com.juncheng.dao"></context:component-scan>
+
+
+    <!--========================spring整合mybatis==========================================-->
+    <!--=======和SMMBuild不一样这里把springDao.xml和springService.xml整合到一起了============-->
+
+    <!--1.关联数据库文件-->
+    <context:property-placeholder location="classpath:jbdcConfig.properties"/>
+    <!--2.连接池
+               dbcp:半自动化，不能自动连接
+               c3p0:自动化操作（自动化的加载配置文件，并且可以自动设置到对象中）
+               durid:阿里 hikari:-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+
+        <!--c3p0的私有属性-->
+        <property name="maxPoolSize" value="30"/>
+        <property name="minPoolSize" value="5"/>
+        <!--关闭连接后不自动commit-->
+        <property name="autoCommitOnClose" value="false"/>
+        <!--获取连接超时时间,毫秒-->
+        <property name="checkoutTimeout" value="10000"/>
+        <!--放获取连接失败重试次数-->
+        <property name="acquireRetryAttempts" value="2"/>
+    </bean>
+
+    <!--3.把SqlSessionFactory交给IOC来管理了-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+                <!--传入PageHelper的插件-->
+                <property name="plugins">
+                    <array>
+                        <!--传入插件的对象-->
+                        <bean class="com.github.pagehelper.PageInterceptor">
+                            <property name="properties">
+                                <props>
+                                    <prop key="helperDialect">mysql</prop>
+                                    <prop key="reasonable">true</prop>
+                                </props>
+                            </property>
+                        </bean>
+                    </array>
+                </property>
+    </bean>
+
+
+    <!--4.配置Dao接口扫描包,动态地实现了Dao接口，可以注入到spring的容器中
+        用了这个方法就可以不用去专门整个Dao的实现类了，对比之前的AccountXml-->
+    <bean id="mapperScanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--注入sqlSessionFactory,注意这个属性是个字符串，所以用的时value -->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--扫描Dao接口-->
+        <property name="basePackage" value="com.juncheng.dao"></property>
+    </bean>
+    <!--5.配置Spring的声明式事务管理-->
+    <!--配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+
+
+</beans>
